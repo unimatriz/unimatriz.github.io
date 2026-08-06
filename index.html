@@ -1,0 +1,610 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>人格羅盤 — 解析風土，策展頻率</title>
+<style>
+:root {
+  --bg: #0a0a0a;
+  --card: #141414;
+  --border: rgba(255,255,255,0.08);
+  --text: rgba(255,255,255,0.88);
+  --text2: rgba(255,255,255,0.55);
+  --text3: rgba(255,255,255,0.28);
+  --accent: #c8913a;
+  --input-bg: #1a1a1a;
+--btn-bg: #1a1a1a;
+--btn-hover: #222;
+--radius: 12px;
+}
+* { margin:0; padding:0; box-sizing:border-box; }
+body {
+  font-family: 'PingFang TC','Noto Sans SC','Microsoft YaHei',sans-serif;
+  background: var(--bg); color: var(--text);
+  min-height: 100vh; line-height: 1.7;
+}
+.container { max-width: 680px; margin: 0 auto; padding: 24px 16px 60px; }
+
+/* Header */
+.header { text-align: center; padding: 32px 0 20px; }
+.header h1 { font-size: 28px; letter-spacing: 6px; font-weight: 700; color: var(--text); }
+.header .sub { font-size: 13px; color: var(--text3); letter-spacing: 8px; margin-top: 6px; }
+.header .brand { font-size: 12px; color: var(--text3); letter-spacing: 4px; margin-top: 4px; }
+
+/* Card */
+.card { background: var(--card); border: 1px solid var(--border); border-radius: var(--radius); padding: 20px; margin-bottom: 16px; }
+.card-title { font-size: 15px; font-weight: 600; margin-bottom: 14px; letter-spacing: 2px; color: var(--text); }
+
+/* Form */
+.form-row { display: flex; gap: 10px; align-items: end; flex-wrap: wrap; }
+.form-group { flex: 1; min-width: 140px; }
+.form-group label { display: block; font-size: 12px; color: var(--text2); margin-bottom: 5px; letter-spacing: 1px; }
+.form-group input, .form-group select {
+  width: 100%; padding: 10px 12px; font-size: 15px;
+  background: var(--input-bg); color: var(--text);
+  border: 1px solid var(--border); border-radius: 8px;
+  font-family: inherit; outline: none;
+}
+.form-group input:focus, .form-group select:focus { border-color: var(--accent); }
+.btn {
+  display: inline-flex; align-items: center; justify-content: center;
+  padding: 10px 20px; font-size: 15px; font-weight: 600;
+  border: none; border-radius: 8px; cursor: pointer;
+  font-family: inherit; letter-spacing: 2px;
+  transition: all 0.2s; text-decoration: none;
+}
+.btn-primary { background: var(--accent); color: #000; width: 100%; }
+.btn-primary:hover { opacity: 0.85; }
+.btn-outline { background: var(--btn-bg); color: var(--text); border: 1px solid var(--border); }
+.btn-outline:hover { background: var(--btn-hover); }
+
+/* Tags */
+.tags { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 12px; }
+.tag { font-size: 12px; padding: 3px 10px; border-radius: 20px; background: rgba(255,255,255,0.05); color: var(--text2); letter-spacing: 1px; }
+
+/* Tabs */
+.tabs { display: flex; gap: 4px; border-bottom: 1px solid var(--border); margin-bottom: 16px; overflow-x: auto; }
+.tab-btn { padding: 8px 16px; font-size: 13px; background: none; border: none; color: var(--text2); cursor: pointer; font-family: inherit; white-space: nowrap; letter-spacing: 1px; border-bottom: 2px solid transparent; transition: all 0.2s; }
+.tab-btn.active { color: var(--text); border-bottom-color: var(--accent); }
+
+/* Content */
+.prose { font-size: 14px; color: var(--text); line-height: 1.9; }
+.prose h3 { font-size: 16px; color: var(--text); margin: 16px 0 8px; font-weight: 600; }
+.prose strong { color: var(--text); }
+.prose p { margin-bottom: 6px; }
+
+/* Radar */
+.radar-wrap { display: flex; justify-content: center; padding: 8px 0 16px; }
+.radar-wrap svg { max-width: 100%; }
+
+/* Color palette */
+.palette { display: flex; flex-direction: column; gap: 10px; margin: 12px 0; }
+.palette-item { display: flex; align-items: center; gap: 12px; padding: 10px 12px; background: rgba(255,255,255,0.03); border-radius: 8px; }
+.palette-swatch { width: 40px; height: 40px; border-radius: 8px; flex-shrink: 0; }
+.palette-name { font-weight: 600; font-size: 14px; }
+.palette-src { font-size: 11px; color: var(--text3); }
+.palette-meaning { font-size: 13px; color: var(--text2); margin-top: 2px; }
+
+/* Story card preview */
+.story-preview { text-align: center; margin: 12px 0; }
+.story-preview img { max-width: 100%; border-radius: 8px; border: 1px solid var(--border); }
+
+/* Footer */
+.footer { text-align: center; padding: 20px 0; font-size: 11px; color: var(--text3); letter-spacing: 4px; }
+
+/* Loading */
+.spinner { display: inline-block; width: 18px; height: 18px; border: 2px solid rgba(255,255,255,0.2); border-top-color: var(--accent); border-radius: 50%; animation: spin 0.6s linear infinite; vertical-align: middle; margin-right: 6px; }
+@keyframes spin { to { transform: rotate(360deg); } }
+
+/* Responsive */
+@media (max-width: 480px) {
+  .form-row { flex-direction: column; }
+  .btn-outline { width: 100%; }
+  .header h1 { font-size: 22px; }
+}
+</style>
+</head>
+<body>
+<div class="container">
+  <div class="header">
+    <h1>人格羅盤</h1>
+    <div class="sub">解析風土 · 策展頻率</div>
+    <div class="brand">The Terroir Curator</div>
+  </div>
+
+  <!-- Input Card -->
+  <div class="card" id="inputCard">
+    <div class="card-title">輸入你的出生資料</div>
+    <div class="form-row">
+      <div class="form-group">
+        <label>國曆生日</label>
+        <input type="date" id="birthday" value="1995-06-15" min="1900-01-01" max="2026-12-31">
+      </div>
+      <div class="form-group" style="min-width:100px">
+        <label>血型</label>
+        <select id="bloodType">
+          <option value="">請選擇</option>
+          <option value="A">A 型</option>
+          <option value="B">B 型</option>
+          <option value="AB">AB 型</option>
+          <option value="O">O 型</option>
+        </select>
+      </div>
+    </div>
+    <div style="margin-top:14px">
+      <button class="btn btn-primary" id="analyzeBtn" onclick="analyze()">
+        開始分析
+      </button>
+    </div>
+    <div id="inputError" style="color:#e55;font-size:13px;margin-top:8px;display:none"></div>
+  </div>
+
+  <!-- Results -->
+  <div id="results" style="display:none">
+
+    <!-- Tags -->
+    <div class="tags" id="dimTags"></div>
+
+    <!-- Radar -->
+    <div class="card">
+      <div class="card-title" style="text-align:center">人格羅盤</div>
+      <div class="radar-wrap" id="radarChart"></div>
+    </div>
+
+    <!-- Analysis Tabs -->
+    <div class="card">
+      <div class="tabs" id="tabs">
+        <button class="tab-btn active" onclick="switchTab('personality')">性格剖析</button>
+        <button class="tab-btn" onclick="switchTab('career')">生涯建議</button>
+        <button class="tab-btn" onclick="switchTab('color')">色彩光譜</button>
+        <button class="tab-btn" onclick="switchTab('fun')">趣味總結</button>
+      </div>
+      <div class="prose" id="tabContent"></div>
+    </div>
+
+    <!-- Export Buttons -->
+    <div style="display:flex;gap:10px;flex-wrap:wrap">
+      <button class="btn btn-outline" onclick="exportPDF()">📄 下載 PDF 報告</button>
+      <button class="btn btn-outline" onclick="exportStoryCard()">📱 下載限動小卡</button>
+    </div>
+  </div>
+
+  <div class="footer">人格羅盤 · The Terroir Curator</div>
+</div>
+
+<script>
+// ============================================================
+// LUNAR CALENDAR ENGINE
+// ============================================================
+const LUNAR_INFO = [
+  0x04bd8,0x04ae0,0x0a570,0x054d5,0x0d260,0x0d950,0x16554,0x056a0,0x09ad0,0x055d2,
+  0x04ae0,0x0a5b6,0x0a4d0,0x0d250,0x1d255,0x0b540,0x0d6a0,0x0ada2,0x095b0,0x14977,
+  0x04970,0x0a4b0,0x0b4b5,0x06a50,0x06d40,0x1ab54,0x02b60,0x09570,0x052f2,0x04970,
+  0x06566,0x0d4a0,0x0ea50,0x06e95,0x05ad0,0x02b60,0x186e3,0x092e0,0x1c8d7,0x0c950,
+  0x0d4a0,0x1d8a6,0x0b550,0x056a0,0x1a5b4,0x025d0,0x092d0,0x0d2b2,0x0a950,0x0b557,
+  0x06ca0,0x0b550,0x15355,0x04da0,0x0a5b0,0x14573,0x052b0,0x0a9a8,0x0e950,0x06aa0,
+  0x0aea6,0x0ab50,0x04b60,0x0aae4,0x0a570,0x05260,0x0f263,0x0d950,0x05b57,0x056a0,
+  0x096d0,0x04dd5,0x04ad0,0x0a4d0,0x0d4d4,0x0d250,0x0d558,0x0b540,0x0b6a0,0x195a6,
+  0x095b0,0x049b0,0x0a974,0x0a4b0,0x0b27a,0x06a50,0x06d40,0x0af46,0x0ab60,0x09570,
+  0x04af5,0x04970,0x064b0,0x074a3,0x0ea50,0x06b58,0x05ac0,0x0ab60,0x096d5,0x092e0,
+  0x0c960,0x0d954,0x0d4a0,0x0da50,0x07552,0x056a0,0x0abb7,0x025d0,0x092d0,0x0cab5,
+  0x0a950,0x0b4a0,0x0baa4,0x0ad50,0x055d9,0x04ba0,0x0a5b0,0x15176,0x052b0,0x0a930,
+  0x07954,0x06aa0,0x0ad50,0x05b52,0x04b60,0x0a6e6,0x0a4e0,0x0d260,0x0ea65,0x0d530,
+  0x05aa0,0x076a3,0x096d0,0x04afb,0x04ad0,0x0a4d0,0x1d0b6,0x0d250,0x0d520,0x0dd45,
+  0x0b5a0,0x056d0,0x055b2,0x049b0,0x0a577,0x0a4b0,0x0aa50,0x1b255,0x06d20,0x0ada0,
+  0x14b63,0x09370,0x049f8,0x04970,0x064b0,0x168a6,0x0ea50,0x06aa0,0x1a6c4,0x0aae0,
+  0x092e0,0x0d2e3,0x0c960,0x0d557,0x0d4a0,0x0da50,0x05d55,0x056a0,0x0a6d0,0x055d4,
+  0x052d0,0x0a9b8,0x0a950,0x0b4a0,0x0b6a6,0x0ad50,0x055a0,0x0aba4,0x0a5b0,0x052b0,
+  0x0b273,0x06930,0x07337,0x06aa0,0x0ad50,0x14b55,0x04b60,0x0a570,0x054e4,0x0d160,
+  0x0e968,0x0d520,0x0daa0,0x16aa6,0x056d0,0x04ae0,0x0a9d4,0x0a4d0,0x0d150,0x0f252,0x0d520
+];
+const LUNAR_BASE_DATE = new Date(1900,0,31);
+function getLeapMonth(y){ return LUNAR_INFO[y-1900]&0xf; }
+function getLeapMonthDays(y){ if(getLeapMonth(y)){ return (LUNAR_INFO[y-1900]&0x10000)?30:29; } return 0; }
+function getMonthDays(y,m){ return (LUNAR_INFO[y-1900]&(0x10000>>m))?30:29; }
+function getLunarYearDays(y){ let s=348; for(let i=0x8000;i>0x8;i>>=1) s+=(LUNAR_INFO[y-1900]&i)?1:0; return s+getLeapMonthDays(y); }
+function solarToLunar(date){
+  const base=new Date(LUNAR_BASE_DATE);
+  let offset=Math.floor((date.getTime()-base.getTime())/86400000),lunarYear=1900;
+  for(let i=1900;i<2100&&offset>0;i++){ const yd=getLunarYearDays(i); if(offset<yd){ lunarYear=i; break; } offset-=yd; lunarYear=i; }
+  const leap=getLeapMonth(lunarYear); let isLeap=false,lunarMonth=1;
+  for(let m=1;m<=12&&offset>0;m++){
+    if(leap>0&&m===leap+1&&!isLeap){ --m; isLeap=true; } else { isLeap=false; }
+    const md=isLeap?getLeapMonthDays(lunarYear):getMonthDays(lunarYear,m);
+    if(offset<md){ lunarMonth=m; break; } offset-=md; lunarMonth=m;
+  }
+  return { year:lunarYear, month:lunarMonth, day:offset+1, isLeap };
+}
+const HEAVENLY_STEMS=['甲','乙','丙','丁','戊','己','庚','辛','壬','癸'];
+const EARTHLY_BRANCHES=['子','丑','寅','卯','辰','巳','午','未','申','酉','戌','亥'];
+const ZODIAC_ANIMALS=['鼠','牛','虎','兔','龍','蛇','馬','羊','猴','雞','狗','豬'];
+const MONTH_ORDERS=['寅月','卯月','辰月','巳月','午月','未月','申月','酉月','戌月','亥月','子月','丑月'];
+const ZODIAC_SIGNS=[
+  {sign:'摩羯',sm:12,sd:22,em:1,ed:19},{sign:'水瓶',sm:1,sd:20,em:2,ed:18},
+  {sign:'雙魚',sm:2,sd:19,em:3,ed:20},{sign:'牡羊',sm:3,sd:21,em:4,ed:19},
+  {sign:'金牛',sm:4,sd:20,em:5,ed:20},{sign:'雙子',sm:5,sd:21,em:6,ed:21},
+  {sign:'巨蟹',sm:6,sd:22,em:7,ed:22},{sign:'獅子',sm:7,sd:23,em:8,ed:22},
+  {sign:'處女',sm:8,sd:23,em:9,ed:22},{sign:'天秤',sm:9,sd:23,em:10,ed:23},
+  {sign:'天蠍',sm:10,sd:24,em:11,ed:22},{sign:'射手',sm:11,sd:23,em:12,ed:21}
+];
+const BENMING_MANSION=[
+  ['室','壁','奎','婁','胃','昴','畢','觜','參','井','鬼','柳','星','張','翼','軫','角','亢','氐','房','心','尾','箕','斗','牛','女','虛','危','室','壁'],
+  ['奎','婁','胃','昴','畢','觜','參','井','鬼','柳','星','張','翼','軫','角','亢','氐','房','心','尾','箕','斗','牛','女','虛','危','室','壁','奎','婁'],
+  ['胃','昴','畢','觜','參','井','鬼','柳','星','張','翼','軫','角','亢','氐','房','心','尾','箕','斗','牛','女','虛','危','室','壁','奎','婁','胃','昴'],
+  ['畢','觜','參','井','鬼','柳','星','張','翼','軫','角','亢','氐','房','心','尾','箕','斗','牛','女','虛','危','室','壁','奎','婁','胃','昴','畢','觜'],
+  ['參','井','鬼','柳','星','張','翼','軫','角','亢','氐','房','心','尾','箕','斗','牛','女','虛','危','室','壁','奎','婁','胃','昴','畢','觜','參','井'],
+  ['鬼','柳','星','張','翼','軫','角','亢','氐','房','心','尾','箕','斗','牛','女','虛','危','室','壁','奎','婁','胃','昴','畢','觜','參','井','鬼','柳'],
+  ['張','翼','軫','角','亢','氐','房','心','尾','箕','斗','牛','女','虛','危','室','壁','奎','婁','胃','昴','畢','觜','參','井','鬼','柳','星','張','翼'],
+  ['角','亢','氐','房','心','尾','箕','斗','牛','女','虛','危','室','壁','奎','婁','胃','昴','畢','觜','參','井','鬼','柳','星','張','翼','軫','角','亢'],
+  ['氐','房','心','尾','箕','斗','牛','女','虛','危','室','壁','奎','婁','胃','昴','畢','觜','參','井','鬼','柳','星','張','翼','軫','角','亢','氐','房'],
+  ['心','尾','箕','斗','牛','女','虛','危','室','壁','奎','婁','胃','昴','畢','觜','參','井','鬼','柳','星','張','翼','軫','角','亢','氐','房','心','尾'],
+  ['斗','牛','女','虛','危','室','壁','奎','婁','胃','昴','畢','觜','參','井','鬼','柳','星','張','翼','軫','角','亢','氐','房','心','尾','箕','斗','牛'],
+  ['虛','危','室','壁','奎','婁','胃','昴','畢','觜','參','井','鬼','柳','星','張','翼','軫','角','亢','氐','房','心','尾','箕','斗','牛','女','虛','危']
+];
+function getHeavenlyStem(ly){ return HEAVENLY_STEMS[(ly-4)%10]; }
+function getEarthlyBranch(ly){ return EARTHLY_BRANCHES[(ly-4)%12]; }
+function getStemBranch(ly){ return getHeavenlyStem(ly)+getEarthlyBranch(ly); }
+function getZodiacAnimal(ly){ return ZODIAC_ANIMALS[(ly-4)%12]; }
+function getZodiacSign(m,d){
+  for(const z of ZODIAC_SIGNS){
+    if(z.sm===12){ if((m===12&&d>=z.sd)||(m===1&&d<=z.ed)) return z.sign; }
+    else if((m===z.sm&&d>=z.sd)||(m===z.em&&d<=z.ed)) return z.sign;
+  }
+  return '摩羯';
+}
+function getMonthOrder(m){ return MONTH_ORDERS[m-1]; }
+function getBenmingMansion(lm,ld){ const m=lm-1,d=ld-1; if(m<0||m>=12||d<0||d>=30) return '角'; return BENMING_MANSION[m][d]; }
+function getLifePathNumber(birthday){ const d=birthday.replace(/-/g,'').split('').map(Number); let s=d.reduce((a,b)=>a+b,0); while(s>9&&s!==11&&s!==22&&s!==33) s=String(s).split('').map(Number).reduce((a,b)=>a+b,0); return s; }
+function calculateAll(birthday,bloodType){
+  const d=new Date(birthday); if(isNaN(d.getTime())) throw new Error('無效日期');
+  const m=d.getMonth()+1,day=d.getDate(); const lunar=solarToLunar(d);
+  return {
+    zodiacAnimal:getZodiacAnimal(lunar.year), zodiacSign:getZodiacSign(m,day),
+    lunarMansion:getBenmingMansion(lunar.month,lunar.day), monthOrder:getMonthOrder(lunar.month),
+    stemBranch:getStemBranch(lunar.year), heavenlyStem:getHeavenlyStem(lunar.year),
+    earthlyBranch:getEarthlyBranch(lunar.year), lifePathNumber:getLifePathNumber(birthday), bloodType
+  };
+}
+
+// ============================================================
+// PERSONALITY DATA
+// ============================================================
+const ZODIAC_ANIMAL_DATA={
+  '鼠':{name:'鼠',element:'水',traits:['機智靈巧','善於應變','觀察敏銳','精打細算','適應力強','社交圓融'],description:'屬鼠者天生具備敏銳的直覺與洞察力，能在複雜環境中迅速找到生存之道。你善於累積資源，對細節有過人的記憶力，處事靈活而不失謹慎。在人際關係中，你的幽默感與機智往往成為群體中的潤滑劑，但內心深處保有高度警覺，不輕易對人敞開心扉。',careerHint:'適合需要快速反應與精密思維的領域，如金融分析、策略規劃、科技研發、媒體創作。'},
+  '牛':{name:'牛',element:'土',traits:['踏實穩重','意志堅定','勤奮不懈','責任感強','保守謹慎','耐力驚人'],description:'屬牛者以堅韌不拔的毅力著稱，一旦確立目標便會一步一腳印地朝終點邁進。你不追求速成，相信時間累積的力量，在團隊中是最可靠的中流砥柱。',careerHint:'適合需要長期深耕與專業累積的領域，如工程建築、學術研究、法律事務、財務會計。'},
+  '虎':{name:'虎',element:'木',traits:['勇於冒險','領導力強','自信果斷','熱情洋溢','保護慾強','行動派'],description:'屬虎者天生散發王者氣場，對挑戰充滿熱情，不畏困難反而視為證明自己的機會。你擁有強大的行動力與感染力，能激勵身邊的人跟隨你的步伐。',careerHint:'適合需要領導力與開創精神的領域，如企業管理、創業、軍警消防、運動競技、表演藝術。'},
+  '兔':{name:'兔',element:'木',traits:['溫文儒雅','善解人意','品味出眾','謹慎細膩','外交手腕','優雅從容'],description:'屬兔者以溫和優雅的氣質取勝，不喜衝突，擅長以柔克剛。你對美有獨到的感知力，生活品味與審美眼光往往高人一等。',careerHint:'適合需要美學品味與人際手腕的領域，如設計藝術、公關外交、諮商輔導、教育文化、精品產業。'},
+  '龍':{name:'龍',element:'土',traits:['氣宇軒昂','抱負遠大','魅力四射','創造力強','自信滿滿','幸運加持'],description:'屬龍者天生自帶光環，舉手投足間散發無法忽視的存在感。你有遠大的夢想與實踐的勇氣，不拘泥於細節而著眼大局。',careerHint:'適合需要創意與領導力的領域，如藝術導演、企業創辦人、政治家、大型專案管理。'},
+  '蛇':{name:'蛇',element:'火',traits:['智慧深邃','直覺敏銳','沉著冷靜','魅力神祕','深思熟慮','優雅從容'],description:'屬蛇者擁有哲學家般的深邃思維，不輕易表露情緒但內心波瀾壯闊。你的直覺力驚人，往往能在他人尚未察覺前就洞察先機。',careerHint:'適合需要深度思考與策略規劃的領域，如研究分析、心理諮商、投資理財、偵探推理。'},
+  '馬':{name:'馬',element:'火',traits:['自由奔放','熱情開朗','行動迅速','樂觀積極','獨立自主','冒險精神'],description:'屬馬者嚮往自由、不喜束縛，像草原上奔馳的駿馬般充滿生命力。你熱情直率、行動力強，是天生的探險家。',careerHint:'適合需要行動力與社交能力的領域，如業務開發、旅遊業、運動產業、公關行銷。'},
+  '羊':{name:'羊',element:'土',traits:['溫柔和善','同理心強','藝術氣質','耐心十足','謙遜有禮','和平主義'],description:'屬羊者心地柔軟、善解人意，是群體中的和平使者。你對美與和諧有天然的感受力，藝術細胞豐富。',careerHint:'適合需要同理心與美感的領域，如醫療照護、藝術創作、教育輔導、社會工作。'},
+  '猴':{name:'猴',element:'金',traits:['機智聰明','反應敏捷','多才多藝','好奇心強','幽默風趣','適應力強'],description:'屬猴者頭腦靈活、反應快速，是天生的問題解決者。你對新事物充滿好奇，學習能力驚人，往往能舉一反三。',careerHint:'適合需要創意與應變力的領域，如科技創新、媒體娛樂、行銷企劃、發明設計。'},
+  '雞':{name:'雞',element:'金',traits:['勤勉認真','一絲不苟','自信滿滿','言辭犀利','守時守信','條理分明'],description:'屬雞者做事一絲不苟，講究效率與精準。你自信且善於表達自己，在人群中往往是最引人注目的那一位。',careerHint:'適合需要精準度與表達力的領域，如新聞媒體、法律辯護、品質管理、公開演說。'},
+  '狗':{name:'狗',element:'土',traits:['忠誠可靠','正義感強','誠實坦率','保護慾強','腳踏實地','重情重義'],description:'屬狗者忠誠正直、信守承諾，是朋友眼中最值得信賴的夥伴。你對不公平的事情特別敏感，有強烈的正義感。',careerHint:'適合需要誠信與責任感的領域，如公共服務、法律執行、教育培訓、安全管理。'},
+  '豬':{name:'豬',element:'水',traits:['豁達大度','心地善良','樂觀知足','包容力強','真誠坦率','享受生活'],description:'屬豬者胸襟開闊、待人真誠，不計較小節、不記恨。你懂得享受生活，相信人性本善，是天生的樂觀主義者。',careerHint:'適合需要親和力與包容心的領域，如餐飲服務、娛樂休閒、慈善事業、客戶服務。'}
+};
+const ZODIAC_SIGN_DATA={
+  '牡羊':{name:'牡羊座',element:'火',traits:['雄心壯志','行動導向','熱情直接','開拓精神','競爭意識','勇往直前'],description:'牡羊座的你充滿開創精神，像春天的第一道雷鳴，帶來嶄新的開始。你不怕衝突、不畏挑戰，反而在競爭中越挫越勇。',careerHint:'適合需要開創力與競爭意識的領域，如創業、競技運動、銷售業務、軍警消防。'},
+  '金牛':{name:'金牛座',element:'土',traits:['沉穩可靠','耐心十足','美感敏銳','實事求是','忠誠專一','享受感官'],description:'金牛座的你如大地般沉穩可靠，對美與品質有近乎偏執的追求。你不急於求成，相信慢工出細活，每一步都走得扎實。',careerHint:'適合需要耐心與品味的領域，如金融投資、藝術鑑賞、美食烹飪、園藝設計。'},
+  '雙子':{name:'雙子座',element:'風',traits:['靈活多變','好奇心強','善於溝通','反應敏捷','多才多藝','社交高手'],description:'雙子座的你像風一樣自由靈動，對世界充滿無窮的好奇心。你能同時處理多項任務，在不同角色間自如切換。',careerHint:'適合需要溝通力與適應力的領域，如媒體傳播、行銷公關、教育培訓、寫作編輯。'},
+  '巨蟹':{name:'巨蟹座',element:'水',traits:['情感豐富','保護慾強','直覺敏銳','念舊重情','細心照顧','家庭至上'],description:'巨蟹座的你情感豐沛而細膩，像月光下的潮汐般有著深層的情感韻律。你對人對事都極其用心，一旦認定就會全心守護。',careerHint:'適合需要照顧與關懷的領域，如醫療護理、心理諮商、教育幼教、餐飲服務。'},
+  '獅子':{name:'獅子座',element:'火',traits:['自信耀眼','慷慨大方','領導力強','創造力豐沛','熱情洋溢','舞台靈魂'],description:'獅子座的你天生就是主角，散發著無法忽視的光芒。你熱愛舞台、享受掌聲，但同時也願意用自己的光芒溫暖他人。',careerHint:'適合需要表現力與領導力的領域，如表演藝術、企業管理、政治領導、時尚產業。'},
+  '處女':{name:'處女座',element:'土',traits:['完美主義','條理分明','細心周到','務實可靠','分析力強','勤勉不懈'],description:'處女座的你追求完美、注重細節，擁有敏銳的分析能力。你不放過任何一個微小的瑕疵，這種精益求精的態度讓你在專業領域中脫穎而出。',careerHint:'適合需要精確度與分析力的領域，如醫療衛生、數據分析、編輯校對、品質管控。'},
+  '天秤':{name:'天秤座',element:'風',traits:['公平正義','優雅從容','社交圓融','審美力強','追求和諧','善於協調'],description:'天秤座的你追求平衡與和諧，擁有天生的美感與社交手腕。你在人際關係中如魚得水，總能找到各方都能接受的平衡點。',careerHint:'適合需要協調力與美感的領域，如法律調解、外交公關、藝術設計、時尚精品。'},
+  '天蠍':{name:'天蠍座',element:'水',traits:['意志堅定','洞察力強','情感深沉','神祕魅力','轉化能力','極致專注'],description:'天蠍座的你擁有驚人的洞察力與意志力，能看穿表象直達事物核心。你的情感深沉而強烈，愛恨分明，不鳴則已一鳴驚人。',careerHint:'適合需要深度與洞察力的領域，如調查研究、心理分析、投資併購、外科醫學。'},
+  '射手':{name:'射手座',element:'火',traits:['樂觀開朗','熱愛自由','追求真理','冒險精神','哲學思維','坦率直接'],description:'射手座的你心懷遠方、熱愛自由，是永不停歇的探索者。你對真理與意義的追尋超越了物質層面，總在尋找更高遠的生命視野。',careerHint:'適合需要視野與探索精神的領域，如學術研究、旅遊探險、國際貿易、哲學教育。'},
+  '摩羯':{name:'摩羯座',element:'土',traits:['雄心壯志','自律嚴謹','耐力驚人','務實穩重','責任感強','追求成就'],description:'摩羯座的你以驚人的自律與耐力攀爬人生的高峰，不靠天賦而是靠日復一日的堅持。你看重責任與成就，對自己有著高標準的要求。',careerHint:'適合需要紀律與累積的領域，如企業管理、政府行政、工程建設、金融投資。'},
+  '水瓶':{name:'水瓶座',element:'風',traits:['獨立創新','思想前衛','人道主義','理性冷靜','特立獨行','改革精神'],description:'水瓶座的你是天生的改革者，思想超前時代。你不盲從主流，敢於打破框架，用全新的視角看待世界。',careerHint:'適合需要創新與獨立思考的領域，如科技研發、社會改革、科學研究、未來學。'},
+  '雙魚':{name:'雙魚座',element:'水',traits:['夢幻感性','同理心強','藝術天賦','直覺靈敏','浪漫多情','靈性覺知'],description:'雙魚座的你如深海般夢幻而深邃，擁有無邊的想像力與同理心。你能感知他人微妙的情緒變化，是天生的藝術家與療癒者。',careerHint:'適合需要想像力與同理心的領域，如藝術創作、音樂影視、心理療癒、慈善公益。'}
+};
+const BLOOD_TYPE_DATA={
+  'A':{name:'A 型',element:'水',traits:['謹慎細膩','責任感強','完美主義','有條有理','耐心十足','善於合作'],description:'A 型的你做事一絲不苟，總是在行動前做好萬全準備。你的細膩與責任感讓人安心，但內心的小劇場也常讓你過度緊繃。'},
+  'B':{name:'B 型',element:'風',traits:['自由奔放','創意無窮','樂觀開朗','隨心所欲','好奇心強','不拘小節'],description:'B 型的你像一陣自由的風，不願被規則束縛。你的創意與樂觀感染周圍的人，但有時過於隨性也讓人捏把冷汗。'},
+  'AB':{name:'AB 型',element:'土',traits:['理性與感性並存','雙重視角','獨特見解','適應力強','神祕莫測','冷靜客觀'],description:'AB 型的你擁有雙重思維頻率，能同時用理性與感性看待世界。你的獨特視角讓你成為稀有的存在——既是冷靜的旁觀者，也是熱情的參與者。'},
+  'O':{name:'O 型',element:'火',traits:['自信果斷','領導力強','樂觀積極','包容力強','行動迅速','熱情洋溢'],description:'O 型的你天生具備領袖氣場，自信且行動力強。你的熱情與包容讓你成為團隊中的核心人物，但偶爾的固執也是你的小缺點。'}
+};
+const LUNAR_MANSION_DATA={
+  '角':{name:'角宿',element:'木',traits:['領袖風範','開創精神','正直坦率','氣勢不凡','善於突破','目光遠大'],description:'角宿屬木，為東方蒼龍之角。你天生具備領袖氣質，如晨曦第一道光芒，為眾人指引方向。',careerHint:'適合需要領導力與開創力的領域。'},
+  '亢':{name:'亢宿',element:'金',traits:['剛正不阿','意志堅定','果斷決絕','正義感強','獨立自主','執行力高'],description:'亢宿屬金，為蒼龍之頸。你剛強不屈，對是非善惡有明確的判斷，是團隊中不可或缺的執行者。',careerHint:'適合需要剛毅果斷的領域。'},
+  '氐':{name:'氐宿',element:'土',traits:['穩重踏實','根基深厚','耐心持久','務實可靠','組織力強','循序漸進'],description:'氐宿屬土，為蒼龍之胸。你如大地般穩固，是團隊中最可靠的地基——不求速成，但求根基扎實。',careerHint:'適合需要穩定性與組織力的領域。'},
+  '房':{name:'房宿',element:'火',traits:['熱情活力','行動迅速','表達力強','魅力四射','積極進取','感染力強'],description:'房宿屬火，為蒼龍之腹。你充滿熱情與行動力，是團隊中的能量核心，總能點燃他人的動力。',careerHint:'適合需要表達力與感染力的領域。'},
+  '心':{name:'心宿',element:'火',traits:['情感豐富','直覺敏銳','領導魅力','熱情奔放','創意充沛','浪漫多情'],description:'心宿屬火，為蒼龍之心。你是天生的情感雷達，能精準捕捉人心。你的熱情與魅力讓人不由自主地被你吸引。',careerHint:'適合需要人際敏感度與創意的領域。'},
+  '尾':{name:'尾宿',element:'火',traits:['機智靈活','適應力強','口才出眾','反應迅速','多才多藝','善於結尾'],description:'尾宿屬火，為蒼龍之尾。你擅長收尾與總結，能在最後關頭展現驚人的爆發力與精準度。',careerHint:'適合需要應變力與收尾能力的領域。'},
+  '箕':{name:'箕宿',element:'水',traits:['靈活變通','溝通力強','創意獨特','自由奔放','想像力豐','善於表達'],description:'箕宿屬水，為蒼龍之箕。你如水般靈動，善於溝通與表達，擁有獨特的創意天賦。',careerHint:'適合需要溝通力與創意的領域。'},
+  '斗':{name:'斗宿',element:'水',traits:['智慧深邃','目標明確','謀略過人','沉著冷靜','視野宏觀','善於規劃'],description:'斗宿屬水，為北方玄武之斗。你如北斗般指向清晰，在迷霧中為自己與他人導航。',careerHint:'適合需要策略規劃與遠見的領域。'},
+  '牛':{name:'牛宿',element:'金',traits:['堅毅不拔','踏實努力','耐力持久','責任感強','低調務實','循序漸進'],description:'牛宿屬金，為玄武之牛。你以驚人的毅力與耐力著稱，不求捷徑，一歩一腳印走向目標。',careerHint:'適合需要堅持與耐心的領域。'},
+  '女':{name:'女宿',element:'土',traits:['溫柔細膩','善解人意','內斂含蓄','藝術天賦','審美力強','耐心十足'],description:'女宿屬土，為玄武之女。你擁有溫柔而堅韌的內在力量，像大地般默默承載與滋養一切。',careerHint:'適合需要細膩與美感的領域。'},
+  '虛':{name:'虛宿',element:'水',traits:['直覺靈敏','想像力豐','靈性覺知','內省深刻','創意獨特','感知力強'],description:'虛宿屬水，為玄武之虛。你擁有深邃的內在世界與豐富的想像力，能感知常人看不見的維度。',careerHint:'適合需要靈感與直覺的領域。'},
+  '危':{name:'危宿',element:'火',traits:['冒險精神','行動迅速','危機處理','臨危不亂','膽識過人','果斷決策'],description:'危宿屬火，為玄武之危。你在危機中反而最能展現冷靜與實力，是天生的危機處理專家。',careerHint:'適合需要危機管理與快速決策的領域。'},
+  '室':{name:'室宿',element:'木',traits:['建設能力','組織力強','團隊合作','穩健踏實','規劃周密','執行力高'],description:'室宿屬木，為玄武之室。你善於建立與組織，能將零散的元素組合成穩固的整體。',careerHint:'適合需要組織與建設能力的領域。'},
+  '壁':{name:'壁宿',element:'土',traits:['堅固可靠','保護慾強','忠誠不二','穩如磐石','防禦力強','值得信賴'],description:'壁宿屬土，為玄武之壁。你如城牆般堅固可靠，是身邊人最安心的依靠與守護者。',careerHint:'適合需要保護與守護角色的領域。'},
+  '奎':{name:'奎宿',element:'木',traits:['文學氣質','智慧過人','思考深刻','表達流暢','知識淵博','理性分析'],description:'奎宿屬木，為西方白虎之奎。你擁有深厚的文學素養與智慧，是知識的蒐藏家與傳播者。',careerHint:'適合需要知識與表達的領域。'},
+  '婁':{name:'婁宿',element:'金',traits:['組織管理','條理分明','公正無私','執行力強','效率至上','精益求精'],description:'婁宿屬金，為白虎之婁。你善於管理與組織，做事有條不紊，是天生的營運高手。',careerHint:'適合需要組織管理能力的領域。'},
+  '胃':{name:'胃宿',element:'土',traits:['包容接納','消化吸收','轉化能力','務實穩重','耐心十足','善於整合'],description:'胃宿屬土，為白虎之胃。你擁有強大的消化與轉化能力，能吸收各方資源並化為己用。',careerHint:'適合需要整合與轉化能力的領域。'},
+  '昴':{name:'昴宿',element:'火',traits:['光芒四射','魅力獨特','藝術天賦','感性豐沛','直覺力強','引人注目'],description:'昴宿屬火，為白虎之昴（七姊妹星團）。你如昴星般閃耀，擁有無法忽視的光芒與魅力。',careerHint:'適合需要魅力與表現力的領域。'},
+  '畢':{name:'畢宿',element:'水',traits:['洞察敏銳','直覺精準','判斷力強','沉穩內斂','善於觀察','一針見血'],description:'畢宿屬水，為白虎之畢。你擁有鷹眼般的洞察力，能一眼看穿事物的本質與真相。',careerHint:'適合需要洞察與判斷力的領域。'},
+  '觜':{name:'觜宿',element:'火',traits:['言辭犀利','思維敏捷','表達精準','辯才無礙','機智過人','反應迅速'],description:'觜宿屬火，為白虎之觜。你口才犀利、思緒敏捷，是天生的辯論家與溝通高手。',careerHint:'適合需要口才與思辨的領域。'},
+  '參':{name:'參宿',element:'水',traits:['深思熟慮','哲學思維','智慧深邃','內省深刻','見解獨到','冷靜理性'],description:'參宿屬水，為白虎之參。你擁有哲學家般的深度思維，不斷追問生命與宇宙的終極意義。',careerHint:'適合需要深度思考與研究的領域。'},
+  '井':{name:'井宿',element:'木',traits:['滋養他人','無私奉獻','同理心強','溫柔和善','耐心傾聽','善於支持'],description:'井宿屬木，為南方朱雀之井。你如甘泉般滋養身邊的人，無私地付出而不求回報。',careerHint:'適合需要付出與關懷的領域。'},
+  '鬼':{name:'鬼宿',element:'金',traits:['神祕莫測','直覺超群','靈性天賦','洞察幽微','感知力強','與眾不同'],description:'鬼宿屬金，為朱雀之鬼。你神祕莫測、直覺超群，能感知常人看不見的維度。',careerHint:'適合需要靈性與直覺的領域。'},
+  '柳':{name:'柳宿',element:'木',traits:['柔韌靈活','適應力強','溫和堅韌','隨遇而安','生命力旺','善於妥協'],description:'柳宿屬木，為朱雀之柳。你如柳枝般柔韌，看似柔弱卻極具韌性，風吹不倒。',careerHint:'適合需要適應力與韌性的領域。'},
+  '星':{name:'星宿',element:'火',traits:['明星氣質','耀眼奪目','領導魅力','自信滿滿','創造力強','啟發他人'],description:'星宿屬火，為朱雀之星。你天生具備明星般的閃耀氣質，走到哪裡都是目光焦點。',careerHint:'適合需要舞台與光芒的領域。'},
+  '張':{name:'張宿',element:'火',traits:['開闊胸襟','格局宏大','包容萬物','樂觀開朗','慷慨大方','視野廣闊'],description:'張宿屬火，為朱雀之張。你胸襟開闊、格局宏大，能包容萬物而不計較小節。',careerHint:'適合需要宏觀視野與包容心的領域。'},
+  '翼':{name:'翼宿',element:'火',traits:['自由飛翔','創意無窮','不受拘束','想像力豐','追求突破','靈感充沛'],description:'翼宿屬火，為朱雀之翼。你渴望自由、嚮往天空，是天生的夢想家與飛行家。',careerHint:'適合需要創意與自由的領域。'},
+  '軫':{name:'軫宿',element:'水',traits:['善於結尾','圓融周到','細膩貼心','完美收尾','周到體貼','有始有終'],description:'軫宿屬水，為朱雀之軫。你善於收尾與圓滿，總能在最後一刻讓一切畫上完美的句點。',careerHint:'適合需要細心與圓融的領域。'}
+};
+const MONTH_ORDER_DATA={
+  '寅月':{name:'寅月（正月）',element:'木',traits:['新生之力','開創精神','活力充沛','勇於起步','朝氣蓬勃','行動力強'],description:'寅月出生者，如初春的第一道陽光，充滿創始的能量與新生的喜悅。你擅長從零開始，是天生的拓荒者。'},
+  '卯月':{name:'卯月（二月）',element:'木',traits:['靈活柔軟','適應力強','溫和從容','善於溝通','優雅圓融','生機盎然'],description:'卯月出生者，如仲春時節百花齊放，擁有靈活的思維與溫和的處事風格。你以柔克剛，是最佳的外交官。'},
+  '辰月':{name:'辰月（三月）',element:'土',traits:['氣勢磅礴','格局宏大','領導力強','自信果斷','開拓精神','蓄勢待發'],description:'辰月出生者，如暮春驚蟄後的雷動，氣勢磅礴、蓄勢待發。你擁有領袖般的格局與遠見。'},
+  '巳月':{name:'巳月（四月）',element:'火',traits:['熱情如火','行動迅速','充滿活力','魅力四射','創意充沛','積極進取'],description:'巳月出生者，如初夏的艷陽，熱情洋溢、充滿生命力。你的能量與熱情總是感染身邊的每一個人。'},
+  '午月':{name:'午月（五月）',element:'火',traits:['熱情奔放','光芒萬丈','正直坦率','勇往直前','活力充沛','感染力強'],description:'午月出生者，如盛夏正午的烈日，光芒萬丈不可阻擋。你熱情奔放、正直坦率，是天生的焦點人物。'},
+  '未月':{name:'未月（六月）',element:'土',traits:['溫柔和善','包容力強','耐心十足','同理心強','善解人意','沉穩從容'],description:'未月出生者，如夏末的黃昏，溫暖而包容。你擁有大地般的溫柔與耐心，是他人最安心的港灣。'},
+  '申月':{name:'申月（七月）',element:'金',traits:['機智敏捷','反應迅速','多才多藝','好奇探究','靈活變通','思路清晰'],description:'申月出生者，如初秋的清風，思緒敏捷而清晰。你擁有靈活的頭腦與多變的才藝，永遠在學習與進化。'},
+  '酉月':{name:'酉月（八月）',element:'金',traits:['精準細膩','一絲不苟','追求完美','優雅從容','藝術氣質','條理分明'],description:'酉月出生者，如中秋的明月，精緻而優雅。你對細節有近乎偏執的追求，作品總是精雕細琢。'},
+  '戌月':{name:'戌月（九月）',element:'土',traits:['忠誠可靠','責任感強','正義感重','腳踏實地','保護慾強','沉穩內斂'],description:'戌月出生者，如深秋的暮色，沉穩而可靠。你忠誠正直、有強烈的責任感，是身邊人最信賴的依靠。'},
+  '亥月':{name:'亥月（十月）',element:'水',traits:['智慧深邃','內省深刻','直覺敏銳','豁達大度','包容萬物','沉靜如水'],description:'亥月出生者，如初冬的靜水，深邃而包容。你的智慧如水般深沉，不喧嘩卻有著無比的穿透力。'},
+  '子月':{name:'子月（十一月）',element:'水',traits:['冷靜沉著','智慧內藏','深謀遠慮','應變力強','伺機而動','生命力韌'],description:'子月出生者，如冬至的極致寧靜，在最寒冷的時刻孕育著新生的火種。你的冷靜與策略思維讓你在逆境中更能看清全局。'},
+  '丑月':{name:'丑月（十二月）',element:'土',traits:['堅毅不拔','耐寒耐苦','默默耕耘','儲備能量','等待時機','韌性十足'],description:'丑月出生者，如寒冬的凍土，表面沉寂內在卻在默默蓄力。你不急於表現，但一旦破土而出便勢不可擋。'}
+};
+const HEAVENLY_STEM_DATA={
+  '甲':{name:'甲木',element:'木',traits:['領袖風範','正直坦蕩','成長向上','不畏艱難','開創先鋒','造福他人'],description:'甲木為參天大樹，屬陽木。你天生具備領袖氣質，像一棵挺拔的巨木，正直坦蕩、不畏風雨。',careerHint:'適合需要領導力與遠見的領域，如企業管理、政治領導、教育事業。'},
+  '乙':{name:'乙木',element:'木',traits:['柔韌靈活','適應力強','以柔克剛','善於迂迴','生命力韌','溫和而堅'],description:'乙木為花草藤蔓，屬陰木。你柔韌而有韌性，不與人正面衝突，卻總能找到出路蜿蜒而上。',careerHint:'適合需要柔韌與適應力的領域，如藝術設計、文化創意、外交談判。'},
+  '丙':{name:'丙火',element:'火',traits:['熱情奔放','光芒四射','慷慨大方','活力充沛','感染力強','正直坦率'],description:'丙火為烈日當空，屬陽火。你熱情外放、光芒普照，是群體中的太陽——溫暖、耀眼、不可忽視。',careerHint:'適合需要表現力與感染力的領域，如演藝娛樂、公關行銷、運動產業。'},
+  '丁':{name:'丁火',element:'火',traits:['溫暖持久','細膩體貼','默默照亮','內在堅韌','低調溫暖','忠誠不二'],description:'丁火為燈燭之光，屬陰火。你不求耀眼，卻在黑暗中持續發光，是他人最溫暖的陪伴。',careerHint:'適合需要耐心與溫暖的領域，如教育輔導、醫療照護、工藝製作。'},
+  '戊':{name:'戊土',element:'土',traits:['厚重沉穩','承載萬物','可靠如山','格局宏大','穩健踏實','包容力強'],description:'戊土為城牆厚土，屬陽土。你如大地般沉穩可靠，承載萬物而不言，是團隊中最穩固的基石。',careerHint:'適合需要穩定性與宏觀視野的領域，如土木工程、城市規劃、金融保險。'},
+  '己':{name:'己土',element:'土',traits:['溫柔滋養','細膩周到','耐心培育','善解人意','默默付出','豐饒沃土'],description:'己土為田園沃土，屬陰土。你細膩溫柔、善於滋養，像肥沃的土壤般讓身邊的一切生根發芽。',careerHint:'適合需要培育與照顧的領域，如教育培訓、園藝農業、社會福利。'},
+  '庚':{name:'庚金',element:'金',traits:['剛毅果斷','精準銳利','勇於變革','意志堅定','大刀闊斧','不畏艱險'],description:'庚金為刀劍之金，屬陽金。你果斷精準、不拖泥帶水，在關鍵時刻敢於出手——一刀斬斷亂麻。',careerHint:'適合需要決斷力與變革力的領域，如外科醫療、軍事領導、企業重整。'},
+  '辛':{name:'辛金',element:'金',traits:['精緻細膩','追求完美','氣質出眾','品味高雅','一絲不苟','光彩內斂'],description:'辛金為珠玉之金，屬陰金。你精緻優雅、品味出眾，對美與品質的追求近乎苛求。',careerHint:'適合需要品味與精緻度的領域，如珠寶設計、精品時尚、藝術收藏。'},
+  '壬':{name:'壬水',element:'水',traits:['胸懷壯闊','視野遠大','智慧過人','流動不息','包容萬物','遠見卓識'],description:'壬水為江河大海，屬陽水。你胸懷壯闊、視野遠大，思想如大江東去不可阻擋。',careerHint:'適合需要宏觀視野與智慧的領域，如國際貿易、海洋事業、哲學研究。'},
+  '癸':{name:'癸水',element:'水',traits:['滲透力強','細膩柔軟','潤物無聲','直覺敏銳','適應力強','韌性十足'],description:'癸水為雨露甘霖，屬陰水。你以溫柔滲透的方式影響世界，在最細微處改變一切。',careerHint:'適合需要細膩與滲透力的領域，如心理諮商、靈性指導、文化保存。'}
+};
+const EARTHLY_BRANCH_DATA={
+  '子':{name:'子水',element:'水',traits:['智慧深藏','靈活機變','潛藏生機','適應力強','冷靜沉著','伺機而動'],description:'子為地支之首，屬陽水。你如冬至時節地下暗湧的泉源，表面平靜內在卻能量充沛。'},
+  '丑':{name:'丑土',element:'土',traits:['堅毅沉穩','耐寒耐苦','默默耕耘','儲備能量','腳踏實地','韌性十足'],description:'丑屬陰土，如寒冬凍土。你在最艱難的環境中依然默默蓄力，等待破土而出的時機。'},
+  '寅':{name:'寅木',element:'木',traits:['生機勃發','開創先鋒','勇於突破','活力充沛','行動迅速','朝氣蓬勃'],description:'寅屬陽木，如初春破土之芽。你帶著不可阻擋的生命力衝破一切障礙，開創嶄新的局面。'},
+  '卯':{name:'卯木',element:'木',traits:['柔韌靈動','溫和從容','生機盎然','善於溝通','優雅圓融','伸縮自如'],description:'卯屬陰木，如仲春柔軟的枝條。你以柔克剛、以退為進，在彎曲中找到比挺直更遠的路。'},
+  '辰':{name:'辰土',element:'土',traits:['氣勢磅礴','蓄勢待發','格局宏大','領導力強','自信果斷','雷霆萬鈞'],description:'辰屬陽土，如驚蟄後的春雷。你在沉默中累積能量，一旦爆發便雷霆萬鈞、勢不可擋。'},
+  '巳':{name:'巳火',element:'火',traits:['熱情如火','蛻變重生','魅力四射','能量充沛','行動迅速','靈活多變'],description:'巳屬陰火，如初夏蛻變之蛇。你擁有強大的自我更新能力，總能在灰燼中重生、越變越強。'},
+  '午':{name:'午火',element:'火',traits:['光芒萬丈','熱情奔放','正直坦率','勇往直前','魅力四射','創造力強'],description:'午屬陽火，如盛夏正午的太陽。你光芒萬丈、不可阻擋，是所有目光的焦點。'},
+  '未':{name:'未土',element:'土',traits:['溫柔和善','包容力強','耐心十足','沉穩從容','善解人意','同理心深'],description:'未屬陰土，如夏末溫暖的黃昏。你用溫柔與包容溫暖每一個需要依靠的靈魂。'},
+  '申':{name:'申金',element:'金',traits:['機智敏捷','多才多藝','反應迅速','靈活變通','好奇探究','聰明過人'],description:'申屬陽金，如初秋靈動之猴。你頭腦靈活、反應敏捷，是天生的問題解決者。'},
+  '酉':{name:'酉金',element:'金',traits:['精準細膩','追求完美','優雅從容','一絲不苟','藝術氣質','光芒內斂'],description:'酉屬陰金，如中秋明亮之月。你精緻優雅、追求完美，作品總是精雕細琢、無可挑剔。'},
+  '戌':{name:'戌土',element:'土',traits:['忠誠可靠','責任感強','正義感重','保護慾強','沉穩內斂','腳踏實地'],description:'戌屬陽土，如深秋守護之夜。你忠誠可靠、正義感強，是身邊人最信賴的守護者。'},
+  '亥':{name:'亥水',element:'水',traits:['智慧深邃','豁達大度','包容萬物','沉靜如水','內省深刻','遠見卓識'],description:'亥屬陰水，如初冬沉靜之海。你智慧深邃、胸襟開闊，像大海般包容一切。'}
+};
+const LIFE_PATH_DATA={
+  1:{name:'靈數 1',element:'火',traits:['開創先鋒','獨立自主','領導力強','創意豐沛','自信果斷','勇於突破'],description:'生命靈數 1 的你，是天生的開創者與領袖。你來到世間的使命是開創新局、引領方向。',careerHint:'適合藝術創作、表演娛樂、行銷文案、公關媒體'},
+  2:{name:'靈數 2',element:'水',traits:['協調平衡','同理心強','耐心細膩','合作無間','溫柔包容','外交手腕'],description:'生命靈數 2 的你，是天生的協調者與和平使者。你的使命是在對立中找到共鳴。',careerHint:'適合外交談判、心理諮商、人力資源、客戶服務'},
+  3:{name:'靈數 3',element:'木',traits:['創意豐沛','樂觀開朗','表達力強','幽默風趣','多才多藝','社交高手'],description:'生命靈數 3 的你，是天生的創作者與溝通者。你的創意如泉水般源源不絕。',careerHint:'適合藝術創作、表演娛樂、行銷文案、公關媒體'},
+  4:{name:'靈數 4',element:'土',traits:['穩固踏實','組織力強','自律嚴謹','務實可靠','循序漸進','注重細節'],description:'生命靈數 4 的你，是天生的建造者。你的使命是一磚一瓦打造經得起時間的事物。',careerHint:'適合工程建設、財務會計、系統管理、品質管控'},
+  5:{name:'靈數 5',element:'風',traits:['自由奔放','熱愛冒險','適應力強','多才多藝','靈活變通','活力充沛'],description:'生命靈數 5 的你，是天生的冒險家與自由靈魂。你的使命是探索世界、打破邊界。',careerHint:'適合旅遊探險、媒體傳播、業務開發、自由職業'},
+  6:{name:'靈數 6',element:'土',traits:['關愛守護','責任感強','同理心深','溫柔體貼','美感敏銳','無私奉獻'],description:'生命靈數 6 的你，是天生的守護者與療癒者。你的使命是照顧與滋養他人。',careerHint:'適合醫療照護、教育培訓、藝術設計、社會工作'},
+  7:{name:'靈數 7',element:'水',traits:['智慧深邃','直覺敏銳','善於分析','靈性覺知','獨立思考','追求真理'],description:'生命靈數 7 的你，是天生的思想家與探索者。你的使命是穿透表象直達本質。',careerHint:'適合科學研究、哲學思考、數據分析、靈性指導'},
+  8:{name:'靈數 8',element:'金',traits:['雄心壯志','執行力強','領導魅力','追求成就','物質豐盛','格局宏大'],description:'生命靈數 8 的你，是天生的實踐家與成就者。你的使命是在物質世界中實現豐盛。',careerHint:'適合企業管理、投資理財、創業經營、大型專案'},
+  9:{name:'靈數 9',element:'火',traits:['大愛奉獻','人道主義','智慧圓滿','啟發他人','格局宏大','慈悲為懷'],description:'生命靈數 9 的你，是天生的奉獻者與導師。你走完全部數字旅程，使命是回饋眾生。',careerHint:'適合慈善事業、教育推廣、文化藝術、靈性導師'},
+  11:{name:'靈數 11',element:'光',traits:['靈性啟發','直觀洞見','啟迪人心','高遠格局','精神領袖','天賦異稟'],description:'生命靈數 11 的你，是行走於兩個世界之間的橋樑。你擁有超凡的直覺與靈性啟發力，使命是將高維度的洞察帶入人間、點亮他人。',careerHint:'適合靈性導師、藝術創作、創新發明、心理治療、精神領袖'},
+  22:{name:'靈數 22',element:'金',traits:['宏偉建構','實踐夢想','格局恢宏','化虛為實','領導全球','遠見卓識'],description:'生命靈數 22 的你，是終極的建造大師。你能將最宏大的夢想化為現實，使命是在物質世界中留下不朽的功業。',careerHint:'適合大型建設、國際組織、社會運動、企業王國、城市規劃'},
+  33:{name:'靈數 33',element:'光',traits:['無私大愛','全人療癒','宇宙導師','悲憫眾生','犧牲奉獻','至善至美'],description:'生命靈數 33 的你，是宇宙的導師與療癒者。你的使命是以無條件的愛去教導、滋養、提升整個時代的集體意識。',careerHint:'適合教育革新、醫療療癒、慈善事業、心靈導師、藝術昇華'}
+};
+const ELEMENT_COLORS={ '木':'#4A6741','火':'#C7503E','土':'#C8913A','金':'#8E8E8E','水':'#3A6B8C','風':'#9C7EA8' };
+const STEM_COLOR={'甲':'#5B7F4D','乙':'#7E9E6E','丙':'#D4654A','丁':'#E8846E','戊':'#D4A34A','己':'#C8B87A','庚':'#9E9E9E','辛':'#B0A89C','壬':'#4D7B9E','癸':'#6B9EBF'};
+const BLOOD_COLOR={'A':'#C4756E','B':'#5C8EA8','O':'#7E9E6E','AB':'#9C7EA8'};
+const LIFEPATH_COLOR={1:'#D4343E',2:'#E8915C',3:'#E8C34D',4:'#5C8C5C',5:'#4D8CC3',6:'#6C5C8C',7:'#8C5C8C',8:'#C3934D',9:'#D4C8C0',11:'#C8A8E8',22:'#D4B896',33:'#E8D8F8'};
+const SOURCE_EMOJI={'生肖本質':'🐉','情感風格':'⭐','年柱核心':'🏛️','生命藍圖':'🔢','氣質底色':'🩸'};
+
+// ============================================================
+// ANALYSIS ENGINE
+// ============================================================
+function calculateScores(animal, sign, blood, mansion, month, stem, lifePath){
+  const ad=ZODIAC_ANIMAL_DATA[animal], sd=ZODIAC_SIGN_DATA[sign], bd=BLOOD_TYPE_DATA[blood], md=LUNAR_MANSION_DATA[mansion], mod=MONTH_ORDER_DATA[month], std=HEAVENLY_STEM_DATA[stem], lpd=LIFE_PATH_DATA[lifePath];
+  const lpEl=lpd?lpd.element:'';
+  const bloodEl=(blood==='A'||blood==='AB')?'水':(blood==='B')?'風':'火';
+  const dims=[
+    {el:ad.element,w:0.17},{el:sd.element,w:0.17},{el:bloodEl,w:0.09},
+    {el:md.element,w:0.15},{el:mod.element,w:0.09},{el:std.element,w:0.15},{el:lpEl,w:0.18}
+  ];
+  const maps={
+    leadership:{'火':85,'金':70,'木':60,'土':50,'水':40,'風':50,'':55},
+    creativity:{'風':85,'水':75,'火':70,'木':60,'金':50,'土':40,'':60},
+    stability:{'土':90,'金':75,'水':55,'木':45,'火':35,'風':45,'':60},
+    sociability:{'風':85,'火':75,'水':60,'木':55,'土':45,'金':50,'':60},
+    sensitivity:{'水':90,'土':65,'木':60,'風':55,'火':40,'金':35,'':55},
+    execution:{'火':90,'金':80,'木':70,'風':55,'土':45,'水':35,'':55},
+    insight:{'水':90,'火':75,'風':65,'木':55,'金':45,'土':35,'':50}
+  };
+  function w(m){ let s=0; for(const d of dims) s+=(m[d.el]??55)*d.w; return Math.round(s); }
+  return {leadership:w(maps.leadership),creativity:w(maps.creativity),stability:w(maps.stability),sociability:w(maps.sociability),sensitivity:w(maps.sensitivity),execution:w(maps.execution),insight:w(maps.insight)};
+}
+
+function generateSoulPalette(zodiacAnimal,zodiacSign,bloodType,heavenlyStem,lifePathNumber){
+  const elMap={'鼠':'水','牛':'土','虎':'木','兔':'木','龍':'土','蛇':'火','馬':'火','羊':'土','猴':'金','雞':'金','狗':'土','豬':'水'};
+  const signElMap={'牡羊':'火','金牛':'土','雙子':'風','巨蟹':'水','獅子':'火','處女':'土','天秤':'風','天蠍':'水','射手':'火','摩羯':'土','水瓶':'風','雙魚':'水'};
+  const elNames={'木':'森綠','火':'赤焰','土':'琥珀','金':'銀灰','水':'深海','風':'薰紫'};
+  const elMeaning={'木':'內在的成長動能與生命韌性','火':'靈魂自帶火光，熱情是燃料','土':'大地色系的沉穩力量','金':'精準冷冽的金屬光澤','水':'表面平靜、深處暗湧的智慧','風':'自由流動的創造力'};
+  const palette=[];
+  const animalEl=elMap[zodiacAnimal];
+  if(animalEl&&ELEMENT_COLORS[animalEl]){
+    palette.push({hex:ELEMENT_COLORS[animalEl],name:elNames[animalEl]||animalEl,meaning:elMeaning[animalEl]||'',source:'生肖本質'});
+  }
+  const signEl=signElMap[zodiacSign];
+  if(signEl&&ELEMENT_COLORS[signEl]){
+    palette.push({hex:ELEMENT_COLORS[signEl],name:elNames[signEl]||signEl,meaning:elMeaning[signEl]||'',source:'情感風格'});
+  }
+  if(heavenlyStem&&STEM_COLOR[heavenlyStem]){
+    const sd=HEAVENLY_STEM_DATA[heavenlyStem];
+    palette.push({hex:STEM_COLOR[heavenlyStem],name:heavenlyStem+'木綠',meaning:sd?sd.description.slice(0,30):'',source:'年柱核心'});
+  }
+  if(lifePathNumber&&LIFEPATH_COLOR[lifePathNumber]){
+    const ld=LIFE_PATH_DATA[lifePathNumber];
+    palette.push({hex:LIFEPATH_COLOR[lifePathNumber],name:'靈數'+lifePathNumber,meaning:ld?ld.description.slice(0,30):'',source:'生命藍圖'});
+  }
+  if(bloodType&&BLOOD_COLOR[bloodType]){
+    const bd=BLOOD_TYPE_DATA[bloodType];
+    palette.push({hex:BLOOD_COLOR[bloodType],name:bloodType+'型',meaning:bd?bd.description.slice(0,30):'',source:'氣質底色'});
+  }
+  return palette;
+}
+
+function generateAnalysis(dims){
+  const {zodiacAnimal,zodiacSign,bloodType,lunarMansion,monthOrder,heavenlyStem,stemBranch,lifePathNumber}=dims;
+  const ad=ZODIAC_ANIMAL_DATA[zodiacAnimal],sd=ZODIAC_SIGN_DATA[zodiacSign],bd=BLOOD_TYPE_DATA[bloodType],md=LUNAR_MANSION_DATA[lunarMansion],mod=MONTH_ORDER_DATA[monthOrder],std=HEAVENLY_STEM_DATA[heavenlyStem],lpd=LIFE_PATH_DATA[lifePathNumber];
+  const allTraits=[...ad.traits,...sd.traits,...bd.traits,...md.traits,...mod.traits,...std.traits,...lpd.traits];
+  const coreTraits=[...new Set(allTraits)].slice(0,7);
+  const scores=calculateScores(zodiacAnimal,zodiacSign,bloodType,lunarMansion,monthOrder,heavenlyStem,lifePathNumber);
+  const ebd=EARTHLY_BRANCH_DATA[stemBranch.charAt(1)];
+  const ebDesc=ebd?'\n\n地支「'+stemBranch.charAt(1)+'」：'+ebd.description:'';
+  const overview='你是一位集「'+ad.name+'的'+ad.traits[0]+'」＋「'+sd.name+'的'+sd.traits[0]+'」＋「'+bd.name+'的'+bd.traits[0]+'」＋「'+lpd.name+'的'+lpd.traits[0]+'」於一體的獨特靈魂。'+ad.element+'性生肖賦予你'+ad.traits.slice(0,2).join('與')+'的本質，'+sd.element+'象星座帶來'+sd.traits.slice(0,2).join('與')+'的風格，'+bd.name+'注入'+bd.traits.slice(0,2).join('與')+'的底蘊，'+lpd.name+'則揭示了'+lpd.traits[0]+'的生命藍圖。\n\n你的核心生命關鍵詞是：'+coreTraits.slice(0,6).join('、')+'。這七種能量在你體內以獨特的比例共舞，創造出只有你才能演繹的生命劇本。';
+  const personality='### 本質核心（生肖－'+ad.name+'）\n'+ad.description+'\n\n### 年柱基調（'+stemBranch+'年）\n天干「'+stemBranch.charAt(0)+'」：'+std.description+ebDesc+'\n\n### 生命藍圖（'+lpd.name+'）\n'+lpd.description+'\n\n### 情感風格（星座－'+sd.name+'）\n'+sd.description+'\n\n### 氣質底色（血型－'+bd.name+'）\n'+bd.description+'\n\n### 天命印記（星宿－'+md.name+'）\n'+md.description+'\n\n### 季節韻律（'+mod.name+'）\n'+mod.description+'\n\n### 性格標籤\n'+coreTraits.map(t=>'▸ **'+t+'**').join('\n');
+  const behavior='你的行為模式融合了'+ad.name+'的'+ad.traits[0]+'與'+sd.name+'的'+sd.traits[0]+'。面對挑戰時，'+ad.traits[0]+'的本能驅使你'+ad.traits[1]+'；在日常節奏中，'+mod.name+'的'+mod.traits[0]+'能量影響著你的年度起伏，而'+lpd.name+'的'+lpd.traits[0]+'則為你揭示了此生最重要的成長課題。';
+  const relationships='在人際關係中，你以'+ad.traits[0]+'為核心、'+sd.traits[0]+'為表現方式與世界互動。'+lpd.name+'的'+lpd.traits[0]+'讓你在人際中散發獨特的磁場。'+bd.name+'的'+bd.traits[0]+'加上'+mod.name+'的'+mod.traits[0]+'，讓你在交際中展現出獨特的距離感與溫度。';
+  const careerAdvice='### 綜合建議\n\n你的理想職涯應在「**'+ad.traits.slice(0,2).join('＋')+'**」與「**'+sd.traits.slice(0,2).join('＋')+'**」的交集處尋找。'+lpd.name+'賦予的'+lpd.traits[0]+'是你此生最重要的行動指南，年柱干支賦予的'+std.traits[0]+'是你最深層的職涯驅動力。\n\n**'+ad.name+'的天賦賽道**：'+ad.careerHint+'\n\n**'+sd.name+'的職場優勢**：'+sd.careerHint+'\n\n**'+lpd.name+'的生命使命**：'+lpd.careerHint;
+  const funSummary='🪐 你的靈魂配方：'+ad.name+'的膽識 × '+sd.name+'的風格 × '+bd.name+'的節奏 × '+md.name+'的靈性 × '+stemBranch+'的基調 × '+lpd.name+'的使命 = 獨一無二的你\n\n🎭 如果把你的七維人格拍成電影，片名會是：《'+coreTraits[0]+'與'+coreTraits[1]+'的奇幻旅程》\n\n🌈 你的超能力：在'+coreTraits[2]+'的狀態下發揮'+coreTraits[3]+'的實力，並且看起來很'+coreTraits[4]+'\n\n💫 給你的友情提示：你是那種「第一次見覺得很'+coreTraits[0]+'，熟了以後發現超'+coreTraits[1]+'」的人';
+  const palette=generateSoulPalette(zodiacAnimal,zodiacSign,bloodType,heavenlyStem,lifePathNumber);
+  return {overview,personality,behavior,relationships,careerAdvice,funSummary,scores,coreTraits,palette};
+}
+
+// ============================================================
+// RADAR CHART (SVG)
+// ============================================================
+function renderRadarChart(scores){
+  const labels=['領導力','創造力','穩定性','社交力','感受力','執行力','洞察力'];
+  const values=[scores.leadership,scores.creativity,scores.stability,scores.sociability,scores.sensitivity,scores.execution,scores.insight];
+  const n=values.length, size=260, cx=size/2, cy=size/2, r=size/2-40;
+  const angles=labels.map((_,i)=>(Math.PI*2*i/n)-Math.PI/2);
+  let svg='<svg width="'+size+'" height="'+size+'" viewBox="0 0 '+size+' '+size+'">';
+  // Grid
+  for(let l=1;l<=3;l++){
+    const lr=r*l/3;
+    let pts=''; for(let i=0;i<n;i++) pts+=(cx+lr*Math.cos(angles[i]))+','+(cy+lr*Math.sin(angles[i]))+' ';
+    svg+='<polygon points="'+pts+'" fill="none" stroke="rgba(255,255,255,0.08)" stroke-width="1"/>';
+  }
+  // Axes
+  for(let i=0;i<n;i++){
+    svg+='<line x1="'+cx+'" y1="'+cy+'" x2="'+(cx+r*Math.cos(angles[i]))+'" y2="'+(cy+r*Math.sin(angles[i]))+'" stroke="rgba(255,255,255,0.08)" stroke-width="1"/>';
+  }
+  // Data polygon
+  let dpts=''; for(let i=0;i<n;i++) dpts+=(cx+r*values[i]/100*Math.cos(angles[i]))+','+(cy+r*values[i]/100*Math.sin(angles[i]))+' ';
+  svg+='<polygon points="'+dpts+'" fill="rgba(200,145,58,0.15)" stroke="#c8913a" stroke-width="1.5"/>';
+  // Dots + Labels
+  for(let i=0;i<n;i++){
+    const x=cx+r*values[i]/100*Math.cos(angles[i]), y=cy+r*values[i]/100*Math.sin(angles[i]);
+    svg+='<circle cx="'+x+'" cy="'+y+'" r="3" fill="#c8913a"/>';
+    const lx=cx+(r+28)*Math.cos(angles[i]), ly=cy+(r+28)*Math.sin(angles[i]);
+    svg+='<text x="'+lx+'" y="'+ly+'" text-anchor="middle" dominant-baseline="central" fill="rgba(255,255,255,0.6)" font-size="11" font-family="sans-serif">'+labels[i]+'</text>';
+    svg+='<text x="'+lx+'" y="'+(ly+14)+'" text-anchor="middle" dominant-baseline="central" fill="rgba(255,255,255,0.35)" font-size="10" font-family="sans-serif">'+values[i]+'</text>';
+  }
+  svg+='</svg>';
+  return svg;
+}
+
+// ============================================================
+// STORY CARD (SVG → PNG)
+// ============================================================
+function generateStoryCardSVG(data){
+  const W=1080,H=1920,accent=ELEMENT_COLORS[data.elementColor]||'#6B6B6B';
+  const esc=s=>s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+  const C={primary:'rgba(255,255,255,0.92)',secondary:'rgba(255,255,255,0.50)',tertiary:'rgba(255,255,255,0.28)',line:'rgba(255,255,255,0.06)'};
+  const titleText='《'+data.movieTitle+'》';
+  const wrap=(text,fs,mw)=>{const l=[],chars=[...text];let cur='',cw=0;for(const ch of chars){const w=/[a-zA-Z0-9\s]/.test(ch)&&!/[一-鿿]/.test(ch)?fs*0.55:fs;if(cw+w>mw&&cur.length>0){l.push(cur);cur=ch;cw=w;}else{cur+=ch;cw+=w;}}if(cur)l.push(cur);return l;};
+  const titleLines=wrap(titleText,50,880),titleH=titleLines.length*74,titleSY=560-titleH/2;
+  let titleSVG=''; for(let i=0;i<titleLines.length;i++) titleSVG+='<text x="540" y="'+(titleSY+i*74)+'" text-anchor="middle" dominant-baseline="hanging" fill="'+C.primary+'" font-size="50" font-family="sans-serif" font-weight="600" letter-spacing="4">'+esc(titleLines[i])+'</text>';
+  const maxChips=Math.min(data.coreTraits.length,5),chipPadX=28,chipPadY=14,chipGap=18,chipFS=26,chipH=chipFS+chipPadY*2,chipY=900;
+  const chipW=data.coreTraits.slice(0,maxChips).map(t=>t.length*chipFS+chipPadX*2);
+  const totalChipW=chipW.reduce((a,b)=>a+b,0)+(maxChips-1)*chipGap,chipSX=(W-totalChipW)/2;
+  let chipSVG='',cx=chipSX;
+  for(let i=0;i<maxChips;i++){const cw=chipW[i];chipSVG+='<rect x="'+cx+'" y="'+chipY+'" width="'+cw+'" height="'+chipH+'" rx="'+(chipH/2)+'" fill="none" stroke="'+accent+'" stroke-width="1" opacity="0.45"/><text x="'+(cx+cw/2)+'" y="'+(chipY+chipH/2)+'" text-anchor="middle" dominant-baseline="central" fill="'+C.primary+'" font-size="'+chipFS+'" font-family="sans-serif">#'+esc(data.coreTraits[i])+'</text>';cx+=cw+chipGap;}
+  const skillText=data.hiddenSkill||'…',skillLines=wrap(skillText,26,880),skillH=skillLines.length*42,skillSY=1510;
+  let skillSVG=''; for(let i=0;i<skillLines.length;i++) skillSVG+='<text x="540" y="'+(skillSY+i*42)+'" text-anchor="middle" dominant-baseline="hanging" fill="'+C.secondary+'" font-size="26" font-family="sans-serif" letter-spacing="2">'+esc(skillLines[i])+'</text>';
+  // Color palette dots
+  let paletteDots=''; if(data.paletteHexes&&data.paletteHexes.length>0){ const dotR=16,dotGap=20,totalW=data.paletteHexes.length*(dotR*2)+(data.paletteHexes.length-1)*dotGap; let dx=(W-totalW)/2+dotR; for(const h of data.paletteHexes){ paletteDots+='<circle cx="'+dx+'" cy="1385" r="'+dotR+'" fill="'+h+'" opacity="0.8"/>'; dx+=dotR*2+dotGap; } }
+  return '<?xml version="1.0" encoding="UTF-8"?><svg xmlns="http://www.w3.org/2000/svg" width="'+W+'" height="'+H+'" viewBox="0 0 '+W+' '+H+'"><rect width="'+W+'" height="'+H+'" fill="#000000"/><text x="80" y="72" fill="'+C.tertiary+'" font-size="22" font-family="sans-serif" letter-spacing="8">人格羅盤</text><text x="1000" y="72" text-anchor="end" fill="'+C.tertiary+'" font-size="22" font-family="sans-serif" letter-spacing="4">TTC</text><line x1="80" y1="92" x2="1000" y2="92" stroke="'+C.line+'" stroke-width="1"/><text x="1000" y="140" text-anchor="end" fill="'+C.secondary+'" font-size="24" font-family="sans-serif" letter-spacing="3">'+esc(data.monthOrder)+'生 · '+esc(data.bloodType)+'型</text><text x="80" y="225" fill="'+C.primary+'" font-size="64" font-family="sans-serif" font-weight="700" letter-spacing="6">'+esc(data.name)+'</text><text x="80" y="280" fill="'+C.secondary+'" font-size="24" font-family="sans-serif" letter-spacing="3">'+esc(data.stemBranch)+'年 · '+esc(data.zodiacAnimal)+' · '+esc(data.zodiacSign)+' · '+esc(data.lunarMansion)+' · 靈數'+data.lifePathNumber+'</text><line x1="450" y1="420" x2="630" y2="420" stroke="'+accent+'" stroke-width="1" opacity="0.35"/>'+titleSVG+'<line x1="470" y1="810" x2="610" y2="810" stroke="'+accent+'" stroke-width="1" opacity="0.35"/>'+chipSVG+'<line x1="180" y1="1320" x2="900" y2="1320" stroke="'+C.line+'" stroke-width="1"/><text x="540" y="1358" text-anchor="middle" fill="'+C.tertiary+'" font-size="15" font-family="sans-serif" letter-spacing="10">SOUL SPECTRUM</text>'+paletteDots+'<line x1="280" y1="1420" x2="800" y2="1420" stroke="'+C.line+'" stroke-width="1"/><text x="540" y="1460" text-anchor="middle" fill="'+C.tertiary+'" font-size="18" font-family="sans-serif" letter-spacing="10">HIDDEN SKILL</text>'+skillSVG+'<line x1="280" y1="1800" x2="800" y2="1800" stroke="'+C.line+'" stroke-width="1"/><text x="540" y="1840" text-anchor="middle" fill="'+C.tertiary+'" font-size="18" font-family="sans-serif" letter-spacing="6">✦ 解析風土 · 策展頻率 ✦</text><text x="540" y="1872" text-anchor="middle" fill="rgba(255,255,255,0.14)" font-size="16" font-family="sans-serif" letter-spacing="4">人格羅盤 · The Terroir Curator</text></svg>';
+}
+
+// ============================================================
+// UI LOGIC
+// ============================================================
+let analysisResult=null, currentTab='personality';
+
+function analyze(){
+  const birthday=document.getElementById('birthday').value;
+  const bloodType=document.getElementById('bloodType').value;
+  const errEl=document.getElementById('inputError');
+  if(!birthday){ errEl.textContent='請輸入國曆生日'; errEl.style.display='block'; return; }
+  const year=parseInt(birthday.split('-')[0],10);
+  if(isNaN(year)||year<1900||year>2026){ errEl.textContent='請輸入有效年份（1900–2026）'; errEl.style.display='block'; return; }
+  if(!bloodType){ errEl.textContent='請選擇血型'; errEl.style.display='block'; return; }
+  errEl.style.display='none';
+  try{
+    const dims=calculateAll(birthday,bloodType);
+    const result=generateAnalysis(dims);
+    result.dims=dims;
+    analysisResult=result;
+    document.getElementById('results').style.display='block';
+    // Tags
+    document.getElementById('dimTags').innerHTML=[
+      {l:'天干地支',v:dims.stemBranch},{l:'生肖',v:dims.zodiacAnimal},{l:'星座',v:dims.zodiacSign},
+      {l:'血型',v:bloodType+' 型'},{l:'星宿',v:dims.lunarMansion},{l:'月令',v:dims.monthOrder},{l:'生命靈數',v:String(dims.lifePathNumber)}
+    ].map(d=>'<span class="tag">'+d.l+' '+d.v+'</span>').join('');
+    // Radar
+    document.getElementById('radarChart').innerHTML=renderRadarChart(result.scores);
+    // Tab
+    switchTab('personality');
+    document.getElementById('results').scrollIntoView({behavior:'smooth'});
+  }catch(e){ errEl.textContent=e.message; errEl.style.display='block'; }
+}
+
+function switchTab(tab){
+  currentTab=tab;
+  document.querySelectorAll('.tab-btn').forEach(b=>b.classList.remove('active'));
+  event.target.classList.add('active');
+  const a=analysisResult; if(!a) return;
+  let html='';
+  if(tab==='personality'){
+    html='<p>'+a.overview+'</p><hr style="border-color:rgba(255,255,255,0.06);margin:16px 0"/>'+a.personality.split('\n').map(l=>l.startsWith('### ')?'<h3>'+l.slice(4)+'</h3>':l.startsWith('▸')?'<p>'+l+'</p>':'<p>'+l+'</p>').join('')+'<hr style="border-color:rgba(255,255,255,0.06);margin:16px 0"/><h3>行為模式</h3><p>'+a.behavior+'</p><hr style="border-color:rgba(255,255,255,0.06);margin:16px 0"/><h3>人際關係</h3><p>'+a.relationships+'</p>';
+  }else if(tab==='career'){
+    html=a.careerAdvice.split('\n').map(l=>l.startsWith('### ')?'<h3>'+l.slice(4)+'</h3>':l.startsWith('**')&&l.includes('**')?('<p><strong>'+l.replace(/\*\*/g,'')+'</strong></p>'):'<p>'+l+'</p>').join('');
+  }else if(tab==='color'){
+    html='<p>每個人都有專屬的色彩頻率——你的七維人格在可見光譜上的投影。</p><div class="palette">';
+    for(const c of a.palette){
+      html+='<div class="palette-item"><div class="palette-swatch" style="background:'+c.hex+'"></div><div><div class="palette-name">'+c.name+' <code style="font-size:12px;color:var(--text2)">'+c.hex+'</code> <span class="palette-src">'+(SOURCE_EMOJI[c.source]||'')+' '+c.source+'</span></div><div class="palette-meaning">'+c.meaning+'</div></div></div>';
+    }
+    html+='</div>';
+  }else if(tab==='fun'){
+    html=a.funSummary.split('\n\n').map(p=>'<p>'+p+'</p>').join('');
+  }
+  document.getElementById('tabContent').innerHTML=html;
+}
+
+function exportPDF(){ window.print(); }
+
+function exportStoryCard(){
+  const a=analysisResult; if(!a) return;
+  const els={'鼠':'水','牛':'土','虎':'木','兔':'木','龍':'土','蛇':'火','馬':'火','羊':'土','猴':'金','雞':'金','狗':'土','豬':'水'};
+  const animalEl=els[a.dims.zodiacAnimal]||'水';
+  const movieMatch=a.funSummary.match(/《(.+?)》/),movieTitle=movieMatch?movieMatch[1]:'獨一無二的靈魂旅程';
+  const skillMatch=a.funSummary.match(/隱藏技能[：:]\s*(.+)/),hiddenSkill=skillMatch?skillMatch[1].trim():'';
+  const paletteHexes=a.palette.map(c=>c.hex);
+  const svgString=generateStoryCardSVG({
+    name:a.dims.zodiacAnimal+a.dims.zodiacSign+a.dims.bloodType+'型',stemBranch:a.dims.stemBranch,zodiacAnimal:a.dims.zodiacAnimal,zodiacSign:a.dims.zodiacSign,bloodType:a.dims.bloodType+' 型',lunarMansion:a.dims.lunarMansion,monthOrder:a.dims.monthOrder,lifePathNumber:a.dims.lifePathNumber,movieTitle,coreTraits:a.coreTraits,hiddenSkill,elementColor:animalEl,paletteHexes
+  });
+  const svgBlob=new Blob([svgString],{type:'image/svg+xml;charset=utf-8'});
+  const url=URL.createObjectURL(svgBlob);
+  const img=new Image();
+  img.onload=()=>{
+    const canvas=document.createElement('canvas');
+    canvas.width=img.width; canvas.height=img.height;
+    const ctx=canvas.getContext('2d');
+    ctx.fillStyle='#000'; ctx.fillRect(0,0,canvas.width,canvas.height);
+    ctx.drawImage(img,0,0);
+    URL.revokeObjectURL(url);
+    canvas.toBlob(b=>{
+      const a=document.createElement('a'); a.href=URL.createObjectURL(b); a.download='人格羅盤小卡.png'; a.click();
+    },'image/png');
+  };
+  img.src=url;
+}
+</script>
+</body>
+</html>
